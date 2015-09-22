@@ -4,12 +4,13 @@ import sys
 import numpy as np
 import random
 
-if len(sys.argv) != 3:
-    print "Usage: Ef_optimizer.py num-electrons MO-file"
+if len(sys.argv) != 4:
+    print "Usage: Ef_optimizer.py MO-file num-electrons temperature"
     exit(0)
 
-Nelec = int(sys.argv[1])
-fMO = sys.argv[2]
+fMO = sys.argv[1]
+Nelec = int(sys.argv[2])
+T = int(sys.argv[3])
 
 def read_MO_file(fMO):
 
@@ -19,15 +20,24 @@ def read_MO_file(fMO):
         MO_en.append(float(line.split()[1]))
     return MO_en
 
-def fd_2_err(MO_en, ef, T):
+def fermi_dirac(MO_en, ef, T):
 
-    k = 3.1668114e-6 #[Ha/K]
+    k = 2.1668114e-6 #[Ha/K]
     fi = []
     for i in range(len(MO_en)):
         tmp = np.exp((MO_en[i] - ef)/(k*T))
         fd = 1/(1+tmp)
         fi.append(fd)
-    calc_elec = np.sum(fi)
+    return fi
+
+def fd_2_err(MO_en, ef, T):
+
+    k = 3.1668114e-6 #[Ha/K]
+    calc_elec = 0.0
+    for i in range(len(MO_en)):
+        tmp = np.exp((MO_en[i] - ef)/(k*T))
+        fd = 1/(1+tmp)
+        calc_elec += fd
     err = (calc_elec - Nelec)**2
 
     return err
@@ -48,28 +58,26 @@ if __name__ == "__main__":
     for _ in range(100):
         error = [0.0 for i in range(len(efs))]
         for i in range(len(efs)):
-            err = fd_2_err(MO_en, efs[i], 100000)
+            err = fd_2_err(MO_en, efs[i], T)
             error[i] = err
-        print error
-
-        left_diff = abs(error[0] - error[2])
-        right_diff = abs(error[1] - error[2])
-        print "l = ", left_diff
-        print "r = ", right_diff
+        print "error =",error
 
         # Use left half
-        if left_diff < right_diff:
+        if error[0] < error[1]:
             efs[1] = efs[2]
             efs[2] = (efs[0] + efs[2])/2
 
         # Use right half
-        elif left_diff > right_diff:
+        elif error[0] > error[1]:
             efs[0] = efs[2]
             efs[2] = (efs[1] + efs[2])/2
 
         # If stuck, move the center position a random distance
-#        elif left_diff == right_diff:
-#            r = random.uniform(0.25, 0.75)
-#            efs[2] = (r*efs[0] + (1-r)*efs[1])
+        elif error[0] == error[1]:
+            r = random.uniform(0.05, 0.95)
+            efs[2] = (r*efs[0] + (1-r)*efs[1])
 
-        print " ", efs
+        print "efs =", efs
+
+    fi_final = fermi_dirac(MO_en, efs[2], T)
+    print fi_final, np.sum(fi_final)
