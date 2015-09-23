@@ -34,7 +34,6 @@ def fermi_dirac(MO_en, ef, T):
         fi.append(1/(1+tmp))
     return fi
 
-
 def fd_2_err(MO_en, ef, Nelec, T):
 
     fi_new = fermi_dirac(MO_en, ef, T)
@@ -65,11 +64,10 @@ def get_fermi_energy(MO_en, Nelec, T):
         for i in range(len(efs)):
             err = fd_2_err(MO_en, efs[i], Nelec, T)
             error[i] = err
-        print "error =", error
+#        print "error =", error
 
         if error[1] <= thres:
             fi_final = fermi_dirac(MO_en, efs[1], T)
-            Nelec_alpha = np.sum(fi_final)
             return fi_final, efs[1]
 
         else:
@@ -91,13 +89,14 @@ if __name__ == "__main__":
     MO_en_alpha, MO_en_beta = read_MO_file(fMO)
 
     alpha = get_fermi_energy(MO_en_alpha, Nelec_alpha, T)
-    if Nelec_beta != 0.0:
-        beta = get_fermi_energy(MO_en_beta, Nelec_beta, T)
+    if len(alpha) == 2:
+        print "fi_alpha =", alpha[0], ", Nelec_alpha =", np.sum(alpha[0]), ", alpha_Ef =", alpha[1]
     else:
-        beta_Ef = -1e9
+        print "Alpha fermi energy did not converge"
 
-    if len(alpha) != 2 or len(beta) != 2:
-        print "Both fermi energies did not converge"
-    else:
-        print "fi_alpha =", alpha[0], ", Nelec_alpha =", np.sum(alpha[0]), ", Alpha_Ef =", alpha[1]
-        print "fi_beta =", beta[0], ", Nelec_beta =", np.sum(beta[0]), ", beta_Ef =", beta[1]
+    if Nelec_beta != 0:
+        beta = get_fermi_energy(MO_en_beta, Nelec_beta, T)
+        if len(beta) == 2:
+            print "fi_beta =", beta[0], ", Nelec_beta =", np.sum(beta[0]), ", beta_Ef =", beta[1]
+        else:
+            print "Beta fermi energy did not converge"
