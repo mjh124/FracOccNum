@@ -73,6 +73,7 @@ def execute(fMO, Nelec_alpha, Nelec_beta, T):
     if len(alpha) != 2:
         print "Alpha fermi energy did not converge"
 
+    beta = [0.0]
     if Nelec_beta != 0:
         beta = get_fermi_energy(MO_en_beta, Nelec_beta, T)
         if len(beta) != 2:
