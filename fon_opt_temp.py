@@ -7,6 +7,7 @@ from subprocess import check_call, call
 from scipy.optimized import minimize
 import numpy as np
 from math import erf
+from Ef_opt_mod import *
 
 # Optimizes temperature for a FON calculation
 
@@ -191,7 +192,7 @@ def Etemp(T):
 
     for i in range(len(T)):
         
-        # Do something to build temperature
+        OccNum, Ef = get_fermi_energy(fMO, Nelec, T) # fMO and Nelec may need some work to get (Add spin polarization to get_fermi_energy)
 
         writeSpacesToDisk(spaces_alpha, True)
         writeSpacesToDisk(spaces_beta, False)

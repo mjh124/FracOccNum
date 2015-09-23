@@ -1,31 +1,19 @@
-#!/usr/bin/python
-
-import sys
 import numpy as np
 import random
 
-if len(sys.argv) != 5:
-    print "Usage: Ef_calc_direct.py MO-file num-alpha-elec num-beta-elec temperature"
-    exit(0)
-
-fMO = sys.argv[1]
-Nelec_alpha = int(sys.argv[2])
-Nelec_beta = int(sys.argv[3])
-T = int(sys.argv[4])
-
 def read_MO_file(fMO):
+''' Read in Molecular orbital file '''
 
-    MO_en_alpha = []
-    MO_en_beta = []
+    MO_en = []
     with open(fMO) as f:
         lines = f.readlines()
     for line in lines:
-        MO_en_alpha.append(float(line.split()[1]))
-        if len(line.split()) == 3:
-            MO_en_beta.append(float(line.split()[2]))
-    return MO_en_alpha, MO_en_beta
+            MO_en.append(float(line.split()[1]))
+        return MO_en
 
 def fermi_dirac(MO_en, ef, T):
+''' Calculate the occupations of a list of MOs
+    based on a fermi dirac distribution '''
 
     k = 3.1668114e-6 #[Ha/K]
     fi = []
@@ -35,7 +23,9 @@ def fermi_dirac(MO_en, ef, T):
     return fi
 
 
-def fd_2_err(MO_en, ef, Nelec, T):
+def fd_2_err(MO_en, ef, T):
+''' Calculate the error in occupation number from a 
+    fermi dirac distribution and return error to minimize '''
 
     fi_new = fermi_dirac(MO_en, ef, T)
     calc_elec = np.sum(fi_new)
@@ -43,13 +33,17 @@ def fd_2_err(MO_en, ef, Nelec, T):
     return err
 
 def exit_routine(MO_en, ef, T):
+''' Exit routine once convergence criterion is meet '''
 
     fi_final = fermi_dirac(MO_en, efs[1], T)
     print fi_final, "Total electrons =", np.sum(fi_final)
     print "Fermi Level =", efs[1]
     exit("Ef found successfully")
 
-def get_fermi_energy(MO_en, Nelec, T):
+def get_fermi_energy(fMO, Nelec, T):
+''' Iteratively calculate the fermi energy '''
+
+    MO_en = read_MO_file(fMO)
 
     # Initialize starting fermi level bounds
     ef_left = MO_en[Nelec-1]
@@ -63,13 +57,12 @@ def get_fermi_energy(MO_en, Nelec, T):
     for _ in range(500):
         error = [0.0 for i in range(len(efs))]
         for i in range(len(efs)):
-            err = fd_2_err(MO_en, efs[i], Nelec, T)
+            err = fd_2_err(MO_en, efs[i], T)
             error[i] = err
         print "error =", error
 
         if error[1] <= thres:
             fi_final = fermi_dirac(MO_en, efs[1], T)
-            Nelec_alpha = np.sum(fi_final)
             return fi_final, efs[1]
 
         else:
@@ -82,22 +75,6 @@ def get_fermi_energy(MO_en, Nelec, T):
                 efs[1] = (efs[0] + efs[2]) / 2
 
         Niter += 1
-        print "Fermi =", efs[1], "Number of iterations =", Niter
+        print "Fermi window =", efs, "Number of iterations =", Niter
 
     return "Fermi Energy DID NOT CONVERGE"
-
-if __name__ == "__main__":
-
-    MO_en_alpha, MO_en_beta = read_MO_file(fMO)
-
-    alpha = get_fermi_energy(MO_en_alpha, Nelec_alpha, T)
-    if Nelec_beta != 0.0:
-        beta = get_fermi_energy(MO_en_beta, Nelec_beta, T)
-    else:
-        beta_Ef = -1e9
-
-    if len(alpha) != 2 or len(beta) != 2:
-        print "Both fermi energies did not converge"
-    else:
-        print "fi_alpha =", alpha[0], ", Nelec_alpha =", np.sum(alpha[0]), ", Alpha_Ef =", alpha[1]
-        print "fi_beta =", beta[0], ", Nelec_beta =", np.sum(beta[0]), ", beta_Ef =", beta[1]
