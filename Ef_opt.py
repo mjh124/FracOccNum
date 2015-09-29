@@ -60,7 +60,7 @@ def find_initial_bounds(MO_en, Nelec, T):
     elif Nelec - Nelec_calc < 0:
         while Nelec - Nelec_calc < 0:
             ef_left = ef_left - 1.0
-            ef = (ef_left + ef_right) /2
+            ef = (ef_left + ef_right) / 2
             fi = fermi_dirac(MO_en, ef, T)
             Nelec_calc = np.sum(fi)
         return ef_left, ef_right
