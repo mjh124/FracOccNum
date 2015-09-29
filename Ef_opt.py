@@ -41,6 +41,30 @@ def fd_2_err(MO_en, ef, Nelec, T):
     err = (calc_elec - Nelec)**2
     return err
 
+def find_initial_bounds(MO_en, Nelec, T):
+
+    ef_left = MO_en[Nelec-1]
+    ef_right = MO_en[Nelec]
+    ef = (ef_left + ef_right) / 2
+    fi = fermi_dirac(MO_en, ef, T)
+    Nelec_calc = np.sum(fi)
+
+    if Nelec - Nelec_calc >= 0:
+        while Nelec - Nelec_calc >= 0:
+            ef_right = ef_right + 1.0
+            ef = (ef_left + ef_right) / 2
+            fi = fermi_dirac(MO_en, ef, T)
+            Nelec_calc = np.sum(fi)
+        return ef_left, ef_right
+
+    elif Nelec - Nelec_calc < 0:
+        while Nelec - Nelec_calc < 0:
+            ef_left = ef_left - 1.0
+            ef = (ef_left + ef_right) /2
+            fi = fermi_dirac(MO_en, ef, T)
+            Nelec_calc = np.sum(fi)
+        return ef_left, ef_right
+
 def exit_routine(MO_en, ef, T):
 
     fi_final = fermi_dirac(MO_en, efs[1], T)
@@ -51,15 +75,14 @@ def exit_routine(MO_en, ef, T):
 def get_fermi_energy(MO_en, Nelec, T):
 
     # Initialize starting fermi level bounds
-    ef_left = MO_en[Nelec-1]
-    ef_right = MO_en[Nelec+1]
-    ef_mid = (ef_left + ef_right) / 2
+    ef_left, ef_right = find_initial_bounds(MO_en, Nelec, T)
+    ef_mid = (MO_en[Nelec-1] + MO_en[Nelec]) / 2
     efs = [ef_left, ef_mid, ef_right]
-    print efs
+#    print efs
 
-    thres = 1e-12
+    thres = 1e-20
     Niter = 0
-    for _ in range(500):
+    for _ in range(100):
         error = [0.0 for i in range(len(efs))]
         for i in range(len(efs)):
             err = fd_2_err(MO_en, efs[i], Nelec, T)
@@ -80,7 +103,7 @@ def get_fermi_energy(MO_en, Nelec, T):
                 efs[1] = (efs[0] + efs[2]) / 2
 
         Niter += 1
-        print "Fermi =", efs[1], "Number of iterations =", Niter
+#        print "Fermi =", efs[1], "Number of iterations =", Niter
 
     return "Fermi Energy DID NOT CONVERGE"
 
