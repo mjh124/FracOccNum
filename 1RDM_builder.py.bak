@@ -1,0 +1,108 @@
+#!/usr/bin/python
+
+import sys
+import numpy as np
+
+if len(sys.argv) != 2:
+    print "Usage: 1RDM_builder.py ON_string1"
+    print "Assuming a spin orbital basis with order a,abar,b,bbar,...,N,Nbar"
+    exit(0)
+
+ONs1 = sys.argv[1]
+
+def parse_ONstring(ONstring):
+
+    #May not need to do this...can I work directly with the strings?
+    ONarray = []
+    for i in range(len(ONstring)):
+        ONarray.append(int(ONstring[i]))
+    return ONarray
+
+def do_excitation(ON, chi):
+
+    # chi is a 2x1 array where [0] is annihilation and [1] is creation orb
+#    if chi[0] % 2 == chi[1] % 2:
+    if ON[chi[0]] == 1 and ON[chi[1]] == 0:
+        ON[chi[0]] = 0
+        ON[chi[1]] = 1
+    else:
+        ON = [0 for i in range(len(ON))]
+#    else:
+#        ON = [0 for i in range(len(ON))]
+    return ON
+
+def form_singles_WF(ON):
+
+    # chi is a 2x1 array where [0] is annihilation and [1] is creation orb
+    Nbasis = len(ON)
+    singles = []
+    for i in range(Nbasis):
+        for j in range(Nbasis):
+            chi = [i, j]
+            ONHF = parse_ONstring(ON)
+            ON_ex = do_excitation(ONHF, chi)
+            if sum(ON_ex) > 0:
+                singles.append(ON_ex)
+    return singles
+
+def do_double_excitation(ON, chi1, chi2):
+
+     ON_s = do_single_excitation(ON, chi1)
+     ON_d = do_single_excitation(ON_s, chi2)
+     return ON_d
+
+if __name__ == "__main__":
+
+    # Need to generate all combinations of singles/doubles strings
+    ON1 = parse_ONstring(ONs1) #Starting point is HF ON string
+    Nbasis = len(ON1)
+
+    bra = form_singles_WF(ONs1) # Generate bra wave-function to desired order beforehand as a list of ON strings
+    ket = form_singles_WF(ONs1) # Generate ket wave-function to desired order beforehand as a list of ON strings
+
+    D = [[0 for p in range(Nbasis)] for q in range(Nbasis)] #Initialize the density matrix
+    for p in range(Nbasis):
+        for q in range(Nbasis):
+            # form the matrix elements, Dpq = <phi|chi_pq|phi>
+            Dpq = 0
+            for i in bra:
+                for j in ket:
+                    #dij = CiCj<i|q_pa_q|j>
+                    #Calculate phase factors (positions of creation or annihiliation)
+                    gamma_p = (-1)**(p-1)
+                    gamma_q = (-1)**(q-1)
+
+                    #Calculate deltas for each creation or annihilation
+                    delta_p = 1
+                    if j[p] != 0: delta_p = 0
+                    delta_q = 1
+                    if j[q] != 1: delta_q = 0
+
+                    #Calculate overlap between ON vectors <Ki|Kj_qp>
+                    j[p] = 1
+                    j[q] = 0
+                    ON_overlap = 1
+                    for k in range(Nbasis):
+                        if i[k] != j[k]:
+                            NO_overlap = 0
+
+                    #Bring everything together
+                    dij = -1 * delta_p * delta_q * gamma_p * gamma_q * ON_overlap
+                    #print "%s %s %s" % (i, j, dij) # Need to read this out somehow
+                    Dpq += dij
+
+            D[p][q] = Dpq
+
+    for i in range(len(D)):
+        print D[i]
+
+#    singles = form_singles_WF(ONs1)
+#    for i in range(len(singles)):
+#        bra = singles[i]
+#        for j in range(len(singles)):
+#             chis = form_chis(Nbasis, Nocc)
+#             for k in chis:
+#                 print singles[j]
+#                 ket = do_excitation(singles[j], k)
+#                 print ket
+#                 #compare bra and ket

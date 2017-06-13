@@ -1,0 +1,11 @@
+export QCSCRATCH=$SCRATCH
+export QC=/home/michael/opt/qchem/main
+export PATH=$PATH:$QC/bin
+export QCAUX=/home/michael/opt/qchem/qcaux
+
+export QC_EXT_LIBS=/home/michael/opt/qchem/qc_ext_libs
+#export FTN_HAS_UNDERSCORE
+
+#export QCHEM_CXX_FLAGS="-"
+export QCHEM_Fortran_FLAGS="-DFTN_HAS_UNDERSCORE"
+

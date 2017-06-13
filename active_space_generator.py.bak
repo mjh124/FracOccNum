@@ -1,0 +1,112 @@
+#!/usr/bin/python
+
+# Script to generate all active space combinations with corresponding temperature
+# Also drives qchem
+
+import sys
+import numpy as np
+from subprocess import check_call
+import ExtractOrbitalStructure
+
+if len(sys.argv) != 4:
+    print "Usage: active_space_generator.py qchem_input_template Nact_occ Nact_virt"
+    exit(0)
+
+qtemplate = sys.argv[1]
+Nact_occ = int(sys.argv[2])
+Nact_virt = int(sys.argv[3])
+
+###
+# Run qchem
+###
+
+def run_qchem(filename):
+
+    qchem = "runqchem.sh"
+    input = filename
+    output = filename.strip()[:-3] + ".out"
+    args = input + " " + output
+    print([qchem, args])
+    check_call([qchem, args])
+    return output
+
+###
+# Define all combinations of a given number (get num_occ and num_virt from qchem output; also add constaints)
+###
+
+def generate_orbital_pairs(num_occ, Nact_occ, Nact_virt):
+
+    start_orb = num_occ - Nact_occ
+    end_orb = num_occ + Nact_virt
+    pairs = [(x, y) for x in range(start_orb, num_occ) for y in range(num_occ, end_orb)]
+    return pairs
+
+###
+# Write the file in the proper format for qchem to read (#ActiveOrbs  #Electrons  Temp(K)  ListofOrbs-C++counting)
+###
+
+def write_file(num_spaces, orb_act, num_elec, temp, orb_list, spinpol=0):
+
+    # num_spaces is an integer defining the number of active spaces
+    # orb_act, num_elec, temp are arrays of len(num_spaces)
+    # orb_list is a list of lists that include the orbitals in the active spaces
+
+    if spinpol == 0:
+        fn_out = "FONa.dat"
+    elif spinpol == 1:
+        fn_out = "FONb.dat"
+    else:
+        print "Invalid value for spin polarization"
+
+    fout = open(fn_out, 'w')
+    for i in range(num_spaces):
+        a = orb_act[i]
+        b = num_elec[i]
+        c = temp[i]
+        fout.write('%d %d %d' % (a, b, c))
+        for j in range(len(orb_list[i])):
+            d = orb_list[i][j] # find a way to print list of lists
+            fout.write(' %d' % (d))
+        fout.write('\n')
+    fout.close()
+
+###
+# Use extract_orbital_structure.py to get orbital structure
+###
+
+def get_orb_struc(qtemplate, spin):
+
+    ExtractOrbitalStructure.insert_SKIP_SCFMAN(qtemplate)
+    input_scf_skip = qtemplate.strip()[:-3] + "_skip.in"
+    output_scf_skip = run_qchem(input_scf_skip)
+    num_alpha_occ = ExtractOrbitalStructure.get_num_alpha_orbs(output_scf_skip)
+    if spin == 1:
+        num_beta_occ = ExtractOrbitalStructure.get_num_beta_orbs(output_scf_skip)
+    total_orbs = ExtractOrbitalStructure.get_total_orbs(output_scf_skip, spin)
+    return num_alpha_occ, num_beta_occ, total_orbs
+
+###
+# Main function
+###
+
+if __name__ == "__main__":
+
+    spin = ExtractOrbitalStructure.check_spin(qtemplate)
+    alpha_occ, beta_occ, total_orbs = get_orb_struc(qtemplate, spin)
+    print alpha_occ, beta_occ, total_orbs
+
+    if Nact_occ > alpha_occ:
+        exit("ERROR: Too many occupied orbitals requested in active space")
+    elif total_orbs < (alpha_occ + Nact_virt):
+        exit("ERROR: Too many virtual orbitals requested in active space")
+
+    num_spaces = Nact_occ * Nact_virt
+    orb_act = [2 for i in range(num_spaces)]
+    num_elec = [1 for i in range(num_spaces)]
+    temp = [0.0 for i in range(num_spaces)]
+
+    alpha_pairs = generate_orbital_pairs(alpha_occ, Nact_occ, Nact_virt)
+    write_file(num_spaces, orb_act, num_elec, temp, alpha_pairs)
+    if spin == 1:
+        beta_pairs = generate_orbital_pairs(beta_occ, Nact_occ, Nact_virt)
+        write_file(num_spaces, orb_act, num_elec, temp, beta_pairs, spinpol=spin)

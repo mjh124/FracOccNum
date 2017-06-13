@@ -1,22 +1,6 @@
-#!/usr/bin/python
-
 import sys
 import copy
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.ticker import MaxNLocator
-
-if len(sys.argv) != 4:
-    print "Usage: CISD_1RDM_fromQchem.py Nocc Nvirt fn-qchem"
-    print "    Nocc = #a_occ + #b_occ"
-    print "    Nvirt = #a_virt + #b_virt"
-    print "    Orbital ordering --> a_occ, b_occ, a_virt, b_virt"
-    
-    exit(0)
-
-Nocc = int(sys.argv[1])
-Nvirt = int(sys.argv[2])
-fn_qchem = sys.argv[3]
 
 def parse_singles(fn_qchem, message):
 
@@ -197,7 +181,7 @@ def write_density(D, Nbasis):
             for j in range(Nbasis):
                 f.write("%d    %d    %.8e\n" % (i, j, D[i][j]))
 
-if __name__ == "__main__":
+def build_CISD_DensMat(Nocc, Nvirt, fn_qchem):
 
     # Generate ON strings for each excitation level
     ON = form_HF_string(Nocc, Nvirt)
@@ -255,7 +239,7 @@ if __name__ == "__main__":
     D = np.zeros((Nbasis, Nbasis))
     for p in range(Nbasis):
         for q in range(Nbasis):
-            print 'Writing idx ', p, q
+
             # form the matrix elements, Dpq = <psi|a+_pa_q|psi>
             Dpq = 0
 
@@ -303,25 +287,6 @@ if __name__ == "__main__":
                         if delta_p == 1 and p != q:
                             j_array[p] = 0
 
-#                        if dij != 0:
-#                            bra_cre, bra_annih = get_amplitude(i_array)
-#                            ket_cre, ket_annih = get_amplitude(j_array)
-#                            print "D[%d][%d], Amplitudes: t[%s][%s] --> t[%s][%s], dij = %.4e" % (p, q, tuple(bra_cre), tuple(bra_annih), tuple(ket_cre), tuple(ket_annih), dij)
-
-#                    #print "  %d" % (dij)
-#                    #Dpq += abs(dij)
-
             D[p][q] = Dpq
 
-    write_density(D, Nbasis)
-
-#    # Plot 1RDM as heatmap
-#    cmap = plt.get_cmap('coolwarm')
-#    x1, y1 = np.arange(Nbasis+1), np.arange(Nbasis+1)
-#    plt.pcolor(x1, y1, D, cmap=cmap, vmin=D.min(), vmax=D.max())
-#    plt.colorbar()
-#    plt.show()
-#
-# Still left to do:
-#     1) Add degeneracy counter
-#     2) Write function to compare and quantify densities
+    return D
