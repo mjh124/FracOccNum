@@ -68,6 +68,20 @@ def find_rl(ref_pos, gp, Ngrid, gp_spacing):
 
     return rl
 
+def QuadrupoleAmp(QuadTens):
+
+    Aq = 0.0
+    for i in range(3):
+        for j in range(3):
+            Aq += QuadTens[i][j] * QuadTens[i][j]
+    return np.sqrt(Aq)
+
+def QuadAsym(QuadTens):
+
+    Q_eigvals, Q_eigvecs = np.linalg.eig(QuadTens)
+    Q_asym = Q_eigvals[0] - Q_eigvals[1]
+    return Q_asym
+
 if __name__ == "__main__":
 
     BohrPerAng = 1.88973
@@ -80,27 +94,29 @@ if __name__ == "__main__":
 #    for i in range(10000, 12000):
 #        rl = find_rl(ref_pos, i, Ngrid, gp_spacing)
 #        print rl
+#
+    Qij = np.zeros((3,3))
+    for i in range(3):
+        for j in range(3):
+            qij = 0.0
+            for l in range(len(density)):
+                if i != j:
+                    rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
+                    qij += density[l]*(3*rl[i]*rl[j])
+            Qij[i][j] = qij
+    print 'Quadrupole moment tensor:'
+    print Qij
 
-#    Qij = np.zeros((3,3))
-#    for i in range(3):
-#        for j in range(3):
-#            qij = 0.0
-#            for l in range(len(density)):
-#                if i != j:
-#                    rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
-#                    qij += density[l]*(3*rl[i]*rl[j])
-#            Qij[i][j] = qij
-#    print Qij
+    QuadAmp = QuadrupoleAmp(Qij)
+    print 'Quad Amp =',QuadAmp
 
-#    dip = np.zeros(3)
-#    for i in range(3):
-#        for l in range(len(density)):
-#            rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
+    Q_asym = QuadAsym(Qij)
+    print 'Quad Asym =',Q_asym
+
+    dip = np.zeros(3)
+    for i in range(3):
+        for l in range(len(density)):
+            rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
 #            print l, rl
-#            dip[i] += density[l]*rl[i]
-#    print dip
-
-    total_dens = 0.0
-    for i in density:
-        total_dens += i
-    print total_dens
+            dip[i] += density[l]*rl[i]
+    print 'Dipole moment:',dip
