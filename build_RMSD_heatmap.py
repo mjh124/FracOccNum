@@ -5,11 +5,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-if len(sys.argv) != 2:
-    print "Usage: build_RMSD_heatmap.py BL"
+if len(sys.argv) != 3:
+    print "Usage: build_RMSD_heatmap.py BL En-or-RMSD"
     exit(0)
 
 BL = str(sys.argv[1])
+prop = str(sys.argv[2])
 
 def parse_cube(fn):
 
@@ -64,55 +65,42 @@ def difference_density(dens1, dens2):
 
     return diff, rmsd_of_diff
 
+def plot_heatmap(x, y, heat):
+
+    cmap = plt.get_cmap('coolwarm')
+    plt.pcolor(x, y, heat, cmap=cmap, vmin=heat.min(), vmax=heat.max())
+    plt.colorbar()
+    plt.show()
+
 if __name__ == "__main__":
  
-    #Temps1, Temps2 = np.arange(0, 40001, 5000), np.arange(0, 40001, 5000)
+    #Temps1, Temps2 = np.arange(5000, 50001, 5000), np.arange(5000, 50001, 5000)
     Temps1, Temps2 = np.arange(0, 50001, 5000), np.arange(0, 50001, 5000)
 
     RMSDs = np.zeros((len(Temps1), len(Temps2)))
     Ens = np.zeros((len(Temps1), len(Temps2)))
-    for i in range(len(Temps1)):
-        #fn1 = 'N2_' + str(BL) + 'A_' + str(Temps1[i]) + 'K_CISDDens.cube'
-        #print 'reading', fn1
-        fn_en1 = 'N2_' + str(BL) + 'A_' + str(Temps1[i]) + 'K.out'
-        en1 = extract_CISDenergy(fn_en1)
-        #dens1 = parse_cube(fn1)
+    if prop == 'RMSD':
+        for i in range(len(Temps1)):
+            fn1 = 'N2_' + str(BL) + 'A_' + str(Temps1[i]) + 'K_CISDDens.cube'
+            print 'reading', fn1
+            dens1 = parse_cube(fn1)
+            for j in range(len(Temps2)):
+                fn2 = 'N2_' + str(BL) + 'A_' + str(Temps2[j]) + 'K_CISDDens.cube'
+                dens2 = parse_cube(fn2)
+                diff_dens, rmsd_of_diff = difference_density(dens1, dens2)
+                RMSDs[i][j] = calc_RMSD(dens1, dens2)
+        plot_heatmap(Temps1, Temps2, RMSDs)
 
-        for j in range(len(Temps2)):
-            #fn2 = 'N2_' + str(BL) + 'A_' + str(Temps2[j]) + 'K_CISDDens.cube'
-            #print ' reading', fn2
-            fn_en2 = 'N2_' + str(BL) + 'A_' + str(Temps2[j]) + 'K.out'
-            en2 = extract_CISDenergy(fn_en2)
-            #dens2 = parse_cube(fn2)
-            #diff_dens, rmsd_of_diff = difference_density(dens1, dens2)
-            #RMSDs[i][j] = rmsd_of_diff
-            #print i, j, rmsd_of_diff
-            en_diff = en1 - en2
-            Ens[i][j] = en_diff
+    elif prop == 'En':
+        for i in range(len(Temps1)):
+            fn1 = 'N2_' + str(BL) + 'A_' + str(Temps1[i]) + 'K.out'
+            print 'reading', fn1
+            en1 = extract_CISDenergy(fn1)
+            for j in range(len(Temps2)):
+                fn2 = 'N2_' + str(BL) + 'A_' + str(Temps2[j]) + 'K.out'
+                en2 = extract_CISDenergy(fn2)
+                Ens[i][j] = en1 - en2
+        plot_heatmap(Temps1, Temps2, Ens)
 
-#    # Slices
-    y0 = Ens[0][:]
-#    y5000 = RMSDs[1][:]
-#    y10000 = RMSDs[2][:]
-#    y15000 = RMSDs[3][:]
-    y20000 = Ens[4][:]
-#    y25000 = RMSDs[5][:]
-#    y30000 = RMSDs[6][:]
-#    y35000 = Ens[7][:]
-    y40000 = Ens[8][:]
-#    y45000 = RMSDs[9][:]
-#    y50000 = RMSDs[10][:]
-#
-#    # Plot slices
-    plt.plot(Temps1, y0, '-o', label='0K')
-    plt.plot(Temps1, y20000, '-o', label='20000K')
-    plt.plot(Temps1, y40000, '-o', label='40000K')
-    plt.legend(loc='lower left')
-    plt.show()
-
-    # Plot 1RDM as heatmap
-#    cmap = plt.get_cmap('coolwarm')
-#    #plt.pcolor(Temps1, Temps2, RMSDs, cmap=cmap, vmin=RMSDs.min(), vmax=RMSDs.max())
-#    plt.pcolor(Temps1, Temps2, Ens, cmap=cmap, vmin=Ens.min(), vmax=Ens.max())
-#    plt.colorbar()
-#    plt.show()
+    else:
+        exit('ERROR: Option not implemented')

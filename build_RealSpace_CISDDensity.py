@@ -3,14 +3,18 @@
 import sys
 import numpy as np
 
-if len(sys.argv) != 5:
-    print "Usage: build_RealSpace_CISDDensity.py Density-Matrix len-DM Natoms #total-orbitals"
+if len(sys.argv) != 9:
+    print "Usage: build_RealSpace_CISDDensity.py Density-Matrix len-DM Natoms #total-orbitals Nalpha Nbeta Nbasis Nfroz"
     exit(0)
 
 fn_DM = sys.argv[1]
 Dpq_len = int(sys.argv[2])
 Natoms = int(sys.argv[3])
 tot_orbs = int(sys.argv[4])
+Nalpha = int(sys.argv[5])
+Nbeta = int(sys.argv[6])
+Nbasis = int(sys.argv[7])
+Nfroz = int(sys.argv[8])
 
 def read_DensMat(fn_DM):
 
@@ -44,20 +48,21 @@ def get_preamble(fn, Natoms):
     idx3 = preamble[5].split()[0]
     return preamble, idx1, idx2, idx3
 
-def idx2MO(idx, Nalpha, Nbeta, Nbasis, Nfroz):                                                               
+def idx2MO(idx, Nalpha, Nbeta, Nbasis, Nfroz):
+ 
     NAvirt = Nbasis - (Nalpha + Nfroz)
     NBvirt = Nbasis - (Nbeta + Nfroz)
     if idx < Nalpha:
-        MO_idx = idx + 1 + Nfroz
+        MO_idx = idx + Nfroz
 #        print idx, 'alpha_occ', MO_idx
     elif idx >= Nalpha and idx < Nalpha+Nbeta:
-        MO_idx = Nbasis + (idx-Nalpha) + 1 + Nfroz
+        MO_idx = Nbasis + (idx-Nalpha) + Nfroz
 #        print idx, 'beta_occ', MO_idx
     elif idx >= Nalpha+Nbeta and idx < Nalpha+Nbeta+NAvirt:
-        MO_idx = idx-Nbeta + 1 + Nfroz
+        MO_idx = idx-Nbeta + Nfroz
 #        print idx, 'alpha_virt', MO_idx
     else: 
-        MO_idx = idx + 1 + Nfroz + Nfroz
+        MO_idx = idx + Nfroz + Nfroz
 #        print idx, 'beta_virt', MO_idx
     return MO_idx
 
@@ -80,13 +85,21 @@ def write_output(preamble, density):
         for i in range(len(density)):
             f.write("%.6e\n" % density[i])
 
+def normalizeDensity(gamma, Nelec):
+
+    total_dens = np.sum(gamma)
+    dens_norm = np.zeros(len(gamma))
+    for i in range(len(gamma)):
+        dens_norm[i] = Nelec * gamma[i] / total_dens
+    return dens_norm
+
 if __name__ == "__main__":
 
-    #Constants, These are specific to N2 with 6-31G basis
-    Nalpha = 5
-    Nbeta = 5
-    Nbasis = 18
-    Nfroz = 2
+#    #Constants, These are specific to N2 with 6-31G basis
+#    Nalpha = 5
+#    Nbeta = 5
+#    Nbasis = 18
+#    Nfroz = 2
 
     Dpq = read_DensMat(fn_DM)
     #print Dpq
@@ -111,8 +124,15 @@ if __name__ == "__main__":
             for q in range(len(Dpq)):
                 MO_idx_q = idx2MO(q, Nalpha, Nbeta, Nbasis, Nfroz)
 
-                Edens_r += Dpq[p][q] * orb_densities[r][p] * orb_densities[r][q]
+                Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p]**2 * orb_densities[r][MO_idx_q]**2
+                #Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p] * orb_densities[r][MO_idx_q]
 
         gamma[r] = Edens_r
 
-    write_output(preamble, gamma)
+    Nelec = 7
+    print np.sum(gamma)
+    gamma_final = normalizeDensity(gamma, Nelec)
+    print np.sum(gamma_final)
+
+    #write_output(preamble, gamma)
+    write_output(preamble, gamma_final)

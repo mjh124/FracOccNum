@@ -16,16 +16,16 @@ def idx2MO(idx, Nalpha, Nbeta, Nbasis, Nfroz):
     NAvirt = Nbasis - (Nalpha + Nfroz)
     NBvirt = Nbasis - (Nbeta + Nfroz)
     if idx < Nalpha:
-        MO_idx = idx + 1 + Nfroz
+        MO_idx = idx + Nfroz
         print idx, 'alpha_occ', MO_idx
     elif idx >= Nalpha and idx < Nalpha+Nbeta:
-        MO_idx = Nbasis + (idx-Nalpha) + 1 + Nfroz
+        MO_idx = Nbasis + (idx-Nalpha) + Nfroz
         print idx, 'beta_occ', MO_idx
     elif idx >= Nalpha+Nbeta and idx < Nalpha+Nbeta+NAvirt:
-        MO_idx = idx-Nbeta + 1 + Nfroz
+        MO_idx = idx-Nbeta + Nfroz
         print idx, 'alpha_virt', MO_idx
     else: 
-        MO_idx = idx + 1 + Nfroz + Nfroz
+        MO_idx = idx + Nfroz + Nfroz
         print idx, 'beta_virt', MO_idx
     return MO_idx
 
