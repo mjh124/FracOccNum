@@ -198,6 +198,13 @@ def write_density(D, Nbasis):
             for j in range(Nbasis):
                 f.write("%d    %d    %.8e\n" % (i, j, D[i][j]))
 
+def plot_heatmap(x, y, D):
+
+    cmap = plt.get_cmap('coolwarm')
+    plt.pcolor(x1, y1, D, cmap=cmap, vmin=D.min(), vmax=D.max())
+    plt.colorbar()
+    plt.show()
+
 if __name__ == "__main__":
 
     # Generate ON strings for each excitation level
@@ -280,31 +287,37 @@ if __name__ == "__main__":
                             gamma_q *= (-1)**(j_array[k])
 
                         #delta_q = 1 #Condition above ensures this
-                        j_array[q] = 0
+                        j_array[q] = 0 #Annihilation to the right
 
                         gamma_p = 1
 			for k in range(0, p):
                             gamma_p *= (-1)**(j_array[k])
 
-                        if j_array[p] == 0: 
+#                        if j_array[p] == 0: 
+#                            j_array[p] = 1 #Creation to the right
+#                        else:
+#                            continue
+                        delta_p = 0
+                        if j_array[p] == 0:
+                            delta_p = 1
                             j_array[p] = 1
-                        else:
-                            continue
 
                         #Make sure overlap between ON vectors <Ki|Kj_qp> = 1
-                        if i_key == j_key:
-                        #if np.array_equal(i_array, j_array):
+                        #if i_key == j_key:
+                        if np.array_equal(i_array, j_array):
 
                             #Bring everything together
-                            Dpq += gamma_p * gamma_q * i_amp * ONstring2Amp[j_key]
-                            #Dpq += 4 * gamma_p * gamma_q * i_amp * ONstring2Amp[j_key]
+                            #Dpq += gamma_p * gamma_q * i_amp * ONstring2Amp[j_key]
+                            Dpq += delta_p * gamma_p * gamma_q * i_amp * ONstring2Amp[j_key]
                             #Dpq += Key2Degen[j_key] * gamma_p * gamma_q * i_amp * ONstring2Amp[j_key]
                             #Dpq += dij
 
                         #Reset j so we don't need to make deepcopy
                         j_array[q] = 1
-                        if p != q:
+                        if delta_p == 1 and p != q:
                             j_array[p] = 0
+#                        if p != q:
+#                            j_array[p] = 0
 
                     #print "  %d" % (dij)
                     #Dpq += abs(dij)
@@ -313,13 +326,5 @@ if __name__ == "__main__":
 
     write_density(D, Nbasis)
 
-#    # Plot 1RDM as heatmap
-#    cmap = plt.get_cmap('coolwarm')
-#    x1, y1 = np.arange(Nbasis+1), np.arange(Nbasis+1)
-#    plt.pcolor(x1, y1, D, cmap=cmap, vmin=D.min(), vmax=D.max())
-#    plt.colorbar()
-#    plt.show()
-#
-# Still left to do:
-#     1) Add degeneracy counter
-#     2) Write function to compare and quantify densities
+    #x1, y1 = np.arange(Nbasis+1), np.arange(Nbasis+1)
+    #plot_heatmap(x1, y1, D)

@@ -74,8 +74,8 @@ def plot_heatmap(x, y, heat):
 
 if __name__ == "__main__":
  
-    #Temps1, Temps2 = np.arange(5000, 50001, 5000), np.arange(5000, 50001, 5000)
-    Temps1, Temps2 = np.arange(0, 50001, 5000), np.arange(0, 50001, 5000)
+    Temps1, Temps2 = np.arange(0, 45001, 5000), np.arange(0, 45001, 5000)
+    #Temps1, Temps2 = np.arange(0, 50001, 5000), np.arange(0, 50001, 5000)
 
     RMSDs = np.zeros((len(Temps1), len(Temps2)))
     Ens = np.zeros((len(Temps1), len(Temps2)))

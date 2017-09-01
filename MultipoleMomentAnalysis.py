@@ -42,6 +42,7 @@ def find_reference_position(atoms, Natoms):
         z += float(atoms[i].split()[4])
     ref_pos = np.array((x/Natoms, y/Natoms, z/Natoms))
     ref_pos /= BohrPerAng
+    #print ref_pos
     return ref_pos
 
 def extract_density(fn_cube):
@@ -56,12 +57,13 @@ def extract_density(fn_cube):
 def find_rl(ref_pos, gp, Ngrid, gp_spacing):
 
     x_gp = gp // (Ngrid[1]*Ngrid[2])
-    y_gp = (gp // Ngrid[1]) % Ngrid[2]
+    y_gp = (gp // Ngrid[2]) % Ngrid[1]
     z_gp = gp % Ngrid[2]
+    #print x_gp, y_gp, z_gp
 
-    x_pos = x_gp * (gp_spacing[0] / BohrPerAng) - 1.0
-    y_pos = y_gp * (gp_spacing[1] / BohrPerAng) - 1.0
-    z_pos = z_gp * (gp_spacing[2] / BohrPerAng) - 1.0
+    x_pos = x_gp * (gp_spacing[0] / BohrPerAng) - 4.0 #These minus 4s are box shift, incorporate this into code properly
+    y_pos = y_gp * (gp_spacing[1] / BohrPerAng) - 4.0
+    z_pos = z_gp * (gp_spacing[2] / BohrPerAng) - 4.0
     #print "%d %10.3f %10.3f %10.3f" % (gp, x_pos, y_pos, z_pos)
 
     rl = np.array((x_pos-ref_pos[0], y_pos-ref_pos[1], z_pos-ref_pos[2]))
@@ -104,19 +106,21 @@ if __name__ == "__main__":
                     rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
                     qij += density[l]*(3*rl[i]*rl[j])
             Qij[i][j] = qij
-    print 'Quadrupole moment tensor:'
-    print Qij
+#    print 'Quadrupole moment tensor:'
+#    print Qij
 
     QuadAmp = QuadrupoleAmp(Qij)
-    print 'Quad Amp =',QuadAmp
+#    print 'Quad Amp =',QuadAmp
 
     Q_asym = QuadAsym(Qij)
-    print 'Quad Asym =',Q_asym
+#    print 'Quad Asym =',Q_asym
 
     dip = np.zeros(3)
     for i in range(3):
         for l in range(len(density)):
             rl = find_rl(ref_pos, l, Ngrid, gp_spacing)
-#            print l, rl
+#            print i, l, density[l], rl
             dip[i] += density[l]*rl[i]
-    print 'Dipole moment:',dip
+#    print 'Dipole moment:',dip
+
+    print fn_cube,' ',QuadAmp,' ',Q_asym,' ',dip

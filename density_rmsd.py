@@ -41,7 +41,7 @@ def difference_density(dens1, dens2):
         diff_per[i] = (dens1[i] - dens2[i]) / dens1[i]
         if abs(diff_per[i]) > max_diff:
             max_diff = diff_per[i]
-    print max_diff
+    #print max_diff
     return diff, diff_per
 
 def rmsd(dens1, dens2):
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     rmsd = rmsd(dens1, dens2)
     print rmsd, np.sqrt(diff_rmsd / len(diff_per))
 
-    write_diffDens(preamble, diff_dens)
+    #write_diffDens(preamble, diff_dens)

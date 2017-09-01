@@ -3,8 +3,8 @@
 import sys
 import numpy as np
 
-if len(sys.argv) != 9:
-    print "Usage: build_RealSpace_CISDDensity.py Density-Matrix len-DM Natoms #total-orbitals Nalpha Nbeta Nbasis Nfroz"
+if len(sys.argv) != 10:
+    print "Usage: build_RealSpace_CISDDensity.py Density-Matrix len-DM Natoms #total-orbitals Nalpha Nbeta Nbasis Nfroz Nelec"
     exit(0)
 
 fn_DM = sys.argv[1]
@@ -15,6 +15,7 @@ Nalpha = int(sys.argv[5])
 Nbeta = int(sys.argv[6])
 Nbasis = int(sys.argv[7])
 Nfroz = int(sys.argv[8])
+Nelec = int(sys.argv[9])
 
 def read_DensMat(fn_DM):
 
@@ -117,19 +118,18 @@ if __name__ == "__main__":
         Edens_r = 0.0
 
         if r % 1000 == 0:
-            print 'calculating at',r,'th grid point'
+            print 'Currently at',r,'th grid point'
 
         for p in range(len(Dpq)):
             MO_idx_p = idx2MO(p, Nalpha, Nbeta, Nbasis, Nfroz)
             for q in range(len(Dpq)):
                 MO_idx_q = idx2MO(q, Nalpha, Nbeta, Nbasis, Nfroz)
 
-                Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p]**2 * orb_densities[r][MO_idx_q]**2
-                #Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p] * orb_densities[r][MO_idx_q]
+                #Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p]**2 * orb_densities[r][MO_idx_q]**2
+                Edens_r += Dpq[p][q] * orb_densities[r][MO_idx_p] * orb_densities[r][MO_idx_q]
 
         gamma[r] = Edens_r
 
-    Nelec = 7
     print np.sum(gamma)
     gamma_final = normalizeDensity(gamma, Nelec)
     print np.sum(gamma_final)
