@@ -70,6 +70,22 @@ def find_rl(ref_pos, gp, Ngrid, gp_spacing):
 
     return rl
 
+def nuclear_quadrupole_contribution(ref_pos, atom_charges, atom_coords):
+
+    Qij = np.zeros((3,3))
+    for i in range(3):
+        for j in range(3):
+            qij = 0.0
+            for l in range(len(atom_coords)):
+                if i != j:
+                    print atom_coords[l][0], atom_coords[l][1], atom_coords[l][2]
+                    rl = np.array((ref_pos[0]-atom_coords[l][0], ref_pos[1]-atom_coords[l][1], ref_pos[2]-atom_coords[l][2]))
+                    print rl[0], rl[1], rl[2]
+                    qij += atom_charges[l]*(3*rl[i]*rl[j]) # 7.0 because of N nuclear charge
+            Qij += qij
+    print Qij
+    return Qij
+
 def QuadrupoleAmp(QuadTens):
 
     Aq = 0.0
@@ -93,11 +109,21 @@ if __name__ == "__main__":
     Natoms, Ngrid, gp_spacing, atoms = extract_grid_parameters(preamble)
     ref_pos = find_reference_position(atoms, Natoms)
 
+    atom_charges = []
+    atom_coords = []
+    for i in atoms:
+        tokens = i.split()
+        atom_charges.append(int(tokens[0]))
+        atom_pos = np.array((float(tokens[2])/BohrPerAng, float(tokens[3])/BohrPerAng, float(tokens[4])/BohrPerAng))
+        atom_coords.append(atom_pos)
+    print atom_charges, atom_coords
+
 #    for i in range(10000, 12000):
 #        rl = find_rl(ref_pos, i, Ngrid, gp_spacing)
 #        print rl
-#
-    Qij = np.zeros((3,3))
+
+    Qij = nuclear_quadrupole_contribution(ref_pos, atom_charges, atom_coords)
+    #Qij = np.zeros((3,3))
     for i in range(3):
         for j in range(3):
             qij = 0.0

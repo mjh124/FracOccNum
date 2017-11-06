@@ -62,7 +62,7 @@ def write_FONa(num_aOrbs, aTemp, aHOMO):
 
     fn_FON = "FONa.dat"
     aOrbs = np.arange(num_aOrbs)
-    num_aElec = aHOMO + 1
+    num_aElec = aHOMO
     with open(fn_FON, 'w') as f:
         f.write("%d %d %12.4f " % (len(aOrbs), num_aElec, aTemp))
         for j in aOrbs:
@@ -72,7 +72,7 @@ def write_FONb(num_bOrbs, bTemp, bHOMO):
 
     fn_FON = "FONb.dat"
     bOrbs = np.arange(num_bOrbs)
-    num_bElec = bHOMO + 1
+    num_bElec = bHOMO
     with open(fn_FON, 'w') as f:
         f.write("%d %d %12.4f " % (len(bOrbs), num_bElec, bTemp))
         for j in bOrbs:
